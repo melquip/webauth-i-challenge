@@ -92,8 +92,9 @@ function validateUserBody(req, res, next) {
 function restricted(req, res, next) {
   if (req.session && req.session.user) {
     next();
+  } else {
+    next({ message: "YOU SHALL NOT PASS!", status: 401 });
   }
-  next({ message: "YOU SHALL NOT PASS!", status: 401 });
 }
 
 
