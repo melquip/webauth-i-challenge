@@ -21,14 +21,24 @@ router.post('/login', validateUserBody, (req, res, next) => {
   const { username, password } = req.body;
   Users.getUser({ username }).then(user => {
     const isValidPassword = bcrypt.compareSync(password, user.password);
-    if(!user || !isValidPassword) {
+    if (!user || !isValidPassword) {
       next({ message: "Invalid credentials", status: 401 });
     }
+    req.session.user = user.username;
+    req.session.save();
     res.status(200).json({ id: user.id, username: user.username });
   }).catch(next);
 });
 
-router.get('/users', (req, res, next) => {
+router.get('/logout', (req, res, next) => {
+  if (req.session && req.session.user) {
+    req.session.destroy(next);
+  } else {
+    next({ message: "You are not logged in", status: 200 })
+  }
+})
+
+router.get('/users', restricted, (req, res, next) => {
   Users.getUsers().then(users => {
     if (users) {
       res.status(200).json(users);
@@ -38,7 +48,7 @@ router.get('/users', (req, res, next) => {
   }).catch(next);
 });
 
-router.get('/users/:id', validateUserId, (req, res, next) => {
+router.get('/users/:id', restricted, validateUserId, (req, res, next) => {
   res.status(200).json(req.user);
 });
 
@@ -79,9 +89,19 @@ function validateUserBody(req, res, next) {
   next();
 }
 
+function restricted(req, res, next) {
+  if (req.session && req.session.user) {
+    next();
+  }
+  next({ message: "YOU SHALL NOT PASS!", status: 401 });
+}
+
+
 router.use((error, req, res, next) => {
   res.status(error.status || 500).json({
     file: 'user-router',
+    //headers: req.headers,
+    //protocol: req.protocol,
     method: req.method,
     url: req.url,
     status: error.status || 500,
