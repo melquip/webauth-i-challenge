@@ -4,12 +4,12 @@ const getUsers = () => {
   return db('user');
 }
 
-const getUser = (id) => {
-  return db('user').where({ id }).first();
+const getUser = (dataObj) => {
+  return db('user').where(dataObj).first();
 }
 
 const add = (user) => {
-  return db('user').insert(user).then((ids) => getUser(ids[0]));
+  return db('user').insert(user).then((ids) => getUser({ id: ids[0] }));
 }
 
 const update = (changes, id) => {

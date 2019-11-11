@@ -1,4 +1,5 @@
 const express = require('express');
+const bcrypt = require('bcryptjs');
 
 const Users = require('./user-model');
 
@@ -6,9 +7,28 @@ const router = express.Router();
 
 router.get('/', (req, res) => {
   res.status(200).send('<h1>Hello world</h1>');
-})
+});
 
-router.get('/api/users', (req, res, next) => {
+router.post('/register', validateUserBody, (req, res, next) => {
+  const { username, password } = req.body;
+  const hashedPassword = bcrypt.hashSync(password, 11);
+  Users.add({ username, password: hashedPassword }).then(user => {
+    res.status(201).json(user);
+  }).catch(next);
+});
+
+router.post('/login', validateUserBody, (req, res, next) => {
+  const { username, password } = req.body;
+  Users.getUser({ username }).then(user => {
+    const isValidPassword = bcrypt.compareSync(password, user.password);
+    if(!user || !isValidPassword) {
+      next({ message: "Invalid credentials", status: 401 });
+    }
+    res.status(200).json({ id: user.id, username: user.username });
+  }).catch(next);
+});
+
+router.get('/users', (req, res, next) => {
   Users.getUsers().then(users => {
     if (users) {
       res.status(200).json(users);
@@ -18,23 +38,17 @@ router.get('/api/users', (req, res, next) => {
   }).catch(next);
 });
 
-router.get('/api/users/:id', validateUserId, (req, res, next) => {
+router.get('/users/:id', validateUserId, (req, res, next) => {
   res.status(200).json(req.user);
 });
 
-router.post('/api/users', validateUserBody, (req, res, next) => {
-  Users.add(req.body).then(user => {
-    res.status(201).json(user);
-  }).catch(next);
-});
-
-router.put('/api/users/:id', validateUserId, validateUserBody, (req, res, next) => {
+router.put('/users/:id', validateUserId, validateUserBody, (req, res, next) => {
   Users.update(req.body, req.user.id).then(updatedScheme => {
     res.status(200).json(updatedScheme);
   }).catch(next);
 });
 
-router.delete('/api/users/:id', validateUserId, (req, res, next) => {
+router.delete('/users/:id', validateUserId, (req, res, next) => {
   Users.remove(req.user.id).then(deleted => {
     res.status(204).json(req.user);
   }).catch(next);
@@ -46,7 +60,7 @@ function validateUserId(req, res, next) {
   if (!Number.isInteger(validId) && validId > 0) {
     next({ message: 'Invalid user id' })
   }
-  Users.getUser(validId).then(user => {
+  Users.getUser({ id: validId }).then(user => {
     if (user) {
       req.user = user;
       next();

@@ -11,7 +11,7 @@ server.use(logger);
 server.use(express.json());
 server.use(cors());
 
-server.use('/', usersRouter);
+server.use('/api', usersRouter);
 
 function logger(req, res, next) {
   console.log(req.method, req.url, Date.now())
