@@ -23,16 +23,22 @@ router.post('/login', validateUserBody, (req, res, next) => {
     const isValidPassword = bcrypt.compareSync(password, user.password);
     if (!user || !isValidPassword) {
       next({ message: "Invalid credentials", status: 401 });
+    } else {
+      req.session.user = user;
+      res.status(200).json({ id: user.id, username: user.username });
     }
-    req.session.user = user.username;
-    req.session.save();
-    res.status(200).json({ id: user.id, username: user.username });
   }).catch(next);
 });
 
 router.get('/logout', (req, res, next) => {
-  if (req.session && req.session.user) {
-    req.session.destroy(next);
+  if (req.session) {
+    req.session.destroy(err => {
+      if (err) {
+        next(err);
+      } else {
+        res.status(200).json("logged out");
+      }
+    });
   } else {
     next({ message: "You are not logged in", status: 200 })
   }
@@ -84,9 +90,10 @@ function validateUserBody(req, res, next) {
   const { username, password } = req.body;
   if (!username || !password) {
     next({ message: 'Missing required `username` and `password` fields', status: 401 });
+  } else {
+    req.body = { username, password };
+    next();
   }
-  req.body = { username, password };
-  next();
 }
 
 function restricted(req, res, next) {
@@ -107,7 +114,7 @@ router.use((error, req, res, next) => {
     url: req.url,
     status: error.status || 500,
     message: error.message
-  });
+  }).end();
 })
 
 module.exports = router;
