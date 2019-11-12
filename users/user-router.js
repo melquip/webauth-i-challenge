@@ -13,7 +13,7 @@ router.post('/register', validateUserBody, (req, res, next) => {
   const { username, password } = req.body;
   const hashedPassword = bcrypt.hashSync(password, 11);
   Users.add({ username, password: hashedPassword }).then(user => {
-    res.status(201).json(user);
+    res.status(201).json({ id: user.id, username: user.username });
   }).catch(next);
 });
 
@@ -39,7 +39,7 @@ router.get('/logout', (req, res, next) => {
       if (err) {
         next(err);
       } else {
-        res.status(200).json("logged out");
+        res.status(200).json({ message:"logged out"});
       }
     });
   } else {
@@ -50,14 +50,14 @@ router.get('/logout', (req, res, next) => {
 router.get('/users', restricted, (req, res, next) => {
   Users.getUsers().then(users => {
     if (users) {
-      res.status(200).json(users);
+      res.status(200).json(users.map(user => ({ id: user.id, username: user.username })));
     } else {
       next({ message: "No users were found", status: 404 });
     }
   }).catch(next);
 });
 
-router.get('/users/:id', restricted, validateUserId, (req, res, next) => {
+router.get('/users/:id', restricted, validateUserId, (req, res) => {
   res.status(200).json(req.user);
 });
 
@@ -68,7 +68,7 @@ router.put('/users/:id', validateUserId, validateUserBody, (req, res, next) => {
 });
 
 router.delete('/users/:id', validateUserId, (req, res, next) => {
-  Users.remove(req.user.id).then(deleted => {
+  Users.remove(req.user.id).then(() => {
     res.status(204).json(req.user);
   }).catch(next);
 });

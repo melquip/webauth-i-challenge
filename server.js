@@ -39,6 +39,6 @@ server.use('/api', usersRouter);
 function logger(req, res, next) {
   console.log(req.method, req.url, Date.now())
   next();
-};
+}
 
 module.exports = server;
