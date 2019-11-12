@@ -26,7 +26,7 @@ server.use(session({
   resave: false, // dont recreate session if they didnt change
   saveUninitialized: false, // GDPR compliance | laws against setting cookies automatically
   store: new KnexSessionStore({
-    knex: require('../database/dbConfig'),
+    knex: require('./data/db-config'),
     tablename: 'sessions',
     sidfieldname: 'sid',
     createtable: true,

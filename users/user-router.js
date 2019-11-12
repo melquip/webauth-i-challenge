@@ -20,10 +20,13 @@ router.post('/register', validateUserBody, (req, res, next) => {
 router.post('/login', validateUserBody, (req, res, next) => {
   const { username, password } = req.body;
   Users.getUser({ username }).then(user => {
-    const isValidPassword = bcrypt.compareSync(password, user.password);
-    if (!user || !isValidPassword) {
+    if (!user) {
       next({ message: "Invalid credentials", status: 401 });
     } else {
+      const isValidPassword = bcrypt.compareSync(password, user.password);
+      if (!isValidPassword) {
+        next({ message: "Invalid credentials", status: 401 });
+      }
       req.session.user = user;
       res.status(200).json({ id: user.id, username: user.username });
     }
